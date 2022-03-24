@@ -1,8 +1,10 @@
-import Head from 'next/head'
-import Image from 'next/image'
-import styles from '../styles/Home.module.css'
+import Head from "next/head";
+import Image from "next/image";
+import styles from "../styles/Home.module.css";
+import { Redis } from "@upstash/redis";
+const redis = Redis.fromEnv();
 
-export default function Home() {
+export default function Home({ views }) {
   return (
     <div className={styles.container}>
       <Head>
@@ -16,10 +18,7 @@ export default function Home() {
           Welcome to <a href="https://nextjs.org">Next.js!</a>
         </h1>
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
+        <p className={styles.description}>This page has {views} views</p>
 
         <div className={styles.grid}>
           <a href="https://nextjs.org/docs" className={styles.card}>
@@ -58,12 +57,26 @@ export default function Home() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Powered by{' '}
+          Powered by{" "}
           <span className={styles.logo}>
             <Image src="/vercel.svg" alt="Vercel Logo" width={72} height={16} />
           </span>
         </a>
       </footer>
     </div>
-  )
+  );
+}
+
+export async function getServerSideProps(ctx) {
+  // get current path
+  const key = ctx.req.url;
+  // get current views
+  const views = await redis.get(key);
+  // increment views by one
+  await redis.incr(key);
+  return {
+    props: {
+      views: views ? parseInt(views) : 0,
+    },
+  };
 }
